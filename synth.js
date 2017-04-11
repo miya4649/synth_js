@@ -29,11 +29,11 @@ var FIXED_SCALE_M1 = (FIXED_SCALE - 1);
 var WAVE_BUFFER_SIZE = (1 << WAVE_BUFFER_BITS);
 var WAVE_BUFFER_SIZE_M1 = (WAVE_BUFFER_SIZE - 1);
 var OSCS = 4;
-var REVERB_BUFFER_SIZE = 0x2000;
+var REVERB_BUFFER_SIZE = 0x3000;
 var REVERB_L_SIZE = (REVERB_BUFFER_SIZE - 1);
-var REVERB_R_SIZE = (Math.floor(REVERB_BUFFER_SIZE * 0.91));
+var REVERB_R_SIZE = (Math.floor(REVERB_BUFFER_SIZE * 0.49));
 var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
-var TEMPO = 6.2;
+var TEMPO = 6.0;
 var OUT_VOLUME = (1.0 / FIXED_SCALE);
 var SEQ_LENGTH = 16;
 var BUFFER_LENGTH = 2048;
@@ -69,6 +69,7 @@ var chordData = [
   [0,2,4,5,9,0,0,0],
   [2,5,7,9,11,0,0,0],
 ];
+
 var reverbBufferL = new Array(REVERB_BUFFER_SIZE);
 var reverbBufferR = new Array(REVERB_BUFFER_SIZE);
 var seqData = [];
@@ -99,7 +100,6 @@ function Param()
   this.count = 0;
   this.currentLevel = 0;
   this.pitch = 0;
-  this.velocity = 0;
   this.mod0 = 0;
   this.mod1 = 0;
   this.outData = 0;
@@ -341,6 +341,12 @@ var loop = function()
   }
 
   // reverb
+  var reverbL = reverbBufferR[reverbAddrR] >> 1;
+  var reverbR = reverbBufferL[reverbAddrL] >> 1;
+  reverbL += mixRevR;
+  reverbR += mixRevL;
+  reverbBufferL[reverbAddrL] = reverbL;
+  reverbBufferR[reverbAddrR] = reverbR;
   reverbAddrL++;
   if (reverbAddrL > REVERB_L_SIZE)
   {
@@ -351,14 +357,8 @@ var loop = function()
   {
     reverbAddrR = 0;
   }
-  var reverbL = reverbBufferR[reverbAddrR] >> 1;
-  var reverbR = reverbBufferL[reverbAddrL] >> 1;
-  reverbL += mixRevR;
-  reverbR += mixRevL;
   outL = (mixL + reverbBufferL[reverbAddrL]) * OUT_VOLUME;
   outR = (mixR + reverbBufferR[reverbAddrR]) * OUT_VOLUME;
-  reverbBufferL[reverbAddrL] = reverbL;
-  reverbBufferR[reverbAddrR] = reverbR;
 };
 
 function sp_process(ev)
