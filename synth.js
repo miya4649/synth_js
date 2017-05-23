@@ -115,6 +115,10 @@ function Synthesizer()
   this.init = function()
   {
     var i, reverbLBufferSize, reverbRBufferSize;
+    if (waac)
+    {
+      waac.close();
+    }
     waac = new AudioContext();
     reverbLSize = Math.floor(this.getSampleRate() * reverbLLength);
     reverbRSize = Math.floor(this.getSampleRate() * reverbRLength);
