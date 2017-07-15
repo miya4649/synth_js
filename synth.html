@@ -1,9 +1,15 @@
-<html>
-<body>
+<html lang="ja" id="html1">
+<head>
+<meta charset="utf-8" />
+<title>WebGL Lib</title>
 <script src="stlib.js"></script>
 <script src="synth.js"></script>
 <script src="sequencer.js"></script>
+<script src="webgl_lib.js"></script>
+<script src="visualizer.js"></script>
 <script src="main.js"></script>
-<input type="button" value="Monologue" onclick="playMonologue();" />&nbsp;&nbsp;<input type="button" value="Luna" onclick="playLuna();" />&nbsp;&nbsp;<input type="button" value="Intoxication" onclick="playIntoxication();" />&nbsp;&nbsp;<input type="button" value="Stop" onclick="stop();" /><br />
+</head>
+<body style="padding:0; margin:0;">
+<input type="button" value="Monologue" onclick="main.playMonologue();" />&nbsp;&nbsp;<input type="button" value="Luna" onclick="main.playLuna();" />&nbsp;&nbsp;<input type="button" value="Intoxication" onclick="main.playIntoxication();" />&nbsp;&nbsp;<input type="button" value="Stop" onclick="main.stop();" />&nbsp;&nbsp;<input type="button" value="FullScreen" onclick="execFullScreen('html1');" /><br />
 </body>
 </html>

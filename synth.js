@@ -33,7 +33,7 @@ function Synthesizer()
   var ENV_VALUE_MAX = (1 << FIXED_BITS << FIXED_BITS_ENV);
   var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
   var DEFAULT_LEVEL = (Math.floor(FIXED_SCALE / 4));
-  var BUFFER_LENGTH = 2048;
+  var bufferLength = 2048;
 
   var oscs = 4;
   var reverbLLength = 0.5111;
@@ -45,7 +45,7 @@ function Synthesizer()
   var outVolume = (1.0 / FIXED_SCALE);
 
   var self = this;
-  var callback = null;
+  var callback;
   var callbackRate = 0;
   var callbackCounter = 0;
   var reverbCounter = 0;
@@ -97,8 +97,7 @@ function Synthesizer()
     var i;
     var bufL = ev.outputBuffer.getChannelData(0);
     var bufR = ev.outputBuffer.getChannelData(1);
-
-    for (i = 0; i < BUFFER_LENGTH; i++)
+    for (i = 0; i < bufferLength; i++)
     {
       callbackCounter++;
       if (callbackCounter > callbackRate)
@@ -112,9 +111,15 @@ function Synthesizer()
     }
   };
 
+  // default callback
+  var dummy = function()
+  {
+  };
+
   this.init = function()
   {
     var i, reverbLBufferSize, reverbRBufferSize;
+    callback = dummy;
     if (waac)
     {
       waac.close();
@@ -156,7 +161,7 @@ function Synthesizer()
       params[i].mixOut = true;
       params[i].modPatch0 = i;
       params[i].modPatch1 = i;
-      params[i].modLevel0 = MOD_LEVEL_MAX * rand(6);
+      params[i].modLevel0 = MOD_LEVEL_MAX * randI(6);
       params[i].modLevel1 = 0;
     }
 
@@ -297,7 +302,8 @@ function Synthesizer()
   this.start = function()
   {
     var i;
-    wasp = waac.createScriptProcessor(BUFFER_LENGTH, 2, 2);
+    wasp = waac.createScriptProcessor(0, 2, 2);
+    bufferLength = wasp.bufferSize;
     wasp.onaudioprocess = sp_process;
     wasp.connect(waac.destination);
   };

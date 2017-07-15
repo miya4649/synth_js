@@ -13,6 +13,15 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+function DataSeq(satz, ch, chord, note, oct)
+{
+  this.satz = satz;
+  this.ch = ch;
+  this.chord = chord;
+  this.note = note;
+  this.oct = oct;
+}
+
 function Sequencer()
 {
   var self = this;
@@ -22,6 +31,7 @@ function Sequencer()
   var scaleBufferSize = 16;
   var seqCounter = 0;
   var barCounter = 0;
+  var satzCounter = 0;
   var deleteCounter = 0;
   var chord = 0;
   var note = 0;
@@ -54,6 +64,12 @@ function Sequencer()
   var seqData = [];
 
   this.synth = new Synthesizer();
+
+  // default callback
+  var dummy = function()
+  {
+  };
+  var callbackNoteOn = dummy;
 
   function NoteData()
   {
@@ -120,23 +136,30 @@ function Sequencer()
         {
           for (i = 0; i < oscs; i++)
           {
-            self.synth.getParams(i).envelopeDiffA = self.synth.getEnvValueMax() >> (rand(11) + 2);
-            self.synth.getParams(i).modLevel0 = self.synth.getModLevelMax() * rand(6);
+            self.synth.getParams(i).envelopeDiffA = self.synth.getEnvValueMax() >> (randI(11) + 2);
+            self.synth.getParams(i).modLevel0 = self.synth.getModLevelMax() * randI(6);
           }
         }
-        chord = rand(progressionData[chord][1]) + progressionData[chord][0];
-        deleteCounter = rand(deleteFrequency);
+        chord = randI(progressionData[chord][1]) + progressionData[chord][0];
+        deleteCounter = randI(deleteFrequency);
+        satzCounter++;
       }
       for (i = 0; i < deleteCounter; i++)
       {
-        seqData[rand(oscs)][rand(seqLength)].oct = 0;
+        seqData[randI(oscs)][randI(seqLength)].oct = 0;
       }
       for (i = 0; i < 4; i++)
       {
-        ch = rand(oscs);
-        beat = rand(seqLength);
-        seqData[ch][beat].note = rand(chordLength);
-        seqData[ch][beat].oct = rand(octRange) + octMin;
+        ch = randI(oscs);
+        beat = randI(seqLength);
+        beat_prev = beat - 1;
+        if (beat_prev < 0)
+        {
+          beat_prev += seqLength;
+        }
+        seqData[ch][beat].note = randI(chordLength);
+        seqData[ch][beat].oct = randI(octRange) + octMin;
+        seqData[ch][beat_prev].oct = 0;
       }
       if (appendBass === true)
       {
@@ -152,9 +175,10 @@ function Sequencer()
     {
       if (seqData[i][seqCounter].oct !== 0)
       {
-        self.synth.getParams(i).noteOn = true;
         n = chordData[chord][seqData[i][seqCounter].note];
         self.synth.getParams(i).pitch = scaleTable[n] << seqData[i][seqCounter].oct;
+        self.synth.getParams(i).noteOn = true;
+        callbackNoteOn(new DataSeq(satzCounter, i, chord, n, seqData[i][seqCounter].oct));
       }
       else
       {
@@ -183,5 +207,10 @@ function Sequencer()
     chordData = chordData_arg;
     progressionData = progressionData_arg;
     bassData = bassData_arg;
+  };
+
+  this.setCallback = function(callbackNoteOn_arg)
+  {
+    callbackNoteOn = callbackNoteOn_arg;
   };
 }
