@@ -22,6 +22,9 @@ function WebGLLib()
   var height;
   var callback;
   var resized = true;
+  var averageTime = 16.666666;
+  var fpsCounter = 0;
+  var dateTime;
 
   var clearScreen = function()
   {
@@ -82,6 +85,14 @@ function WebGLLib()
 
   this.nextFrame = function()
   {
+    var now = Date.now();
+    if (fpsCounter >= 60)
+    {
+      fpsCounter = 0;
+      averageTime = (now - dateTime) * 0.0166666666667;
+      dateTime = now;
+    }
+    fpsCounter++;
     window.requestAnimationFrame(callback);
   };
 
@@ -132,10 +143,10 @@ function WebGLLib()
     }
   };
 
-  this.createBuffer = function(program, name, array, size, is_dynamic)
+  this.createBuffer = function(program, name, array, size, isDynamic)
   {
     var usage;
-    if (is_dynamic)
+    if (isDynamic)
     {
       usage = gl.DYNAMIC_DRAW;
     }
@@ -174,6 +185,8 @@ function WebGLLib()
   {
     canvas = document.getElementById(canvas_arg);
     callback = callback_arg;
+    fpsCounter = 0;
+    dateTime = Date.now();
 
     if (canvas)
     {
@@ -193,5 +206,15 @@ function WebGLLib()
     {
       console.log("Error: Get webgl");
     }
+  };
+
+  this.close = function()
+  {
+    window.removeEventListener('resize', delayResize);
+  };
+
+  this.getAverageTime = function()
+  {
+    return averageTime;
   };
 }

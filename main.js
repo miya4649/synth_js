@@ -15,25 +15,45 @@
 
 function Main()
 {
+  var self = this;
   var FIXED_BITS = 14;
   var FIXED_BITS_ENV = 8;
   var FIXED_SCALE = (1 << FIXED_BITS);
   var ENV_VALUE_MAX = (1 << FIXED_BITS << FIXED_BITS_ENV);
   var VSPEED = 0.001;
   var OBJECTS = 32;
+  var saveDocument = '';
 
   var seq = new Sequencer();
   var visualizer = new Visualizer();
 
+  this.start = function()
+  {
+    visualizer.start();
+    seq.start();
+  };
+
   this.stop = function()
   {
+    window.removeEventListener('keyup', evKeyUp);
+    window.removeEventListener('dblclick', evDblClick);
     seq.stop();
+    visualizer.stop();
+    document.body.innerHTML = saveDocument;
   };
 
   // callback
   var noteOnCallback = function(data)
   {
     visualizer.fifo.push(data);
+  };
+
+  var init = function()
+  {
+    saveDocument = document.body.innerHTML;
+    document.body.innerHTML = '<canvas id="canvas1"></canvas>';
+    window.addEventListener('keyup', evKeyUp);
+    window.addEventListener('dblclick', evDblClick);
   };
 
   this.playMonologue = function()
@@ -62,8 +82,7 @@ function Main()
       [0, 3]
     ];
     var bassData = [0,1,3,2,1,2];
-    document.body.innerHTML = '<canvas id="canvas1"></canvas>';
-    stop();
+    init();
     seq.setSeqParam(TEMPO, 16, 4, 5, 3, 16, 4, true, false);
     seq.setChordData(5, chordData, progressionData, bassData);
     seq.synth.setSynthParam(OSCS, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME);
@@ -81,7 +100,7 @@ function Main()
     seq.synth.getParams(0).levelR = PART_VOLUME;
     seq.synth.getParams(1).levelL = PART_VOLUME;
     seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
-    seq.start();
+    self.start();
   };
 
   this.playLuna = function()
@@ -104,8 +123,7 @@ function Main()
       [0, 1]
     ];
     var bassData = [0,2,3];
-    document.body.innerHTML = '<canvas id="canvas1"></canvas>';
-    stop();
+    init();
     seq.setSeqParam(TEMPO, 8, 8, 6, 3, 16, 4, false, true);
     seq.setChordData(5, chordData, progressionData, bassData);
     seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME);
@@ -123,7 +141,7 @@ function Main()
     seq.synth.getParams(0).levelR = PART_VOLUME;
     seq.synth.getParams(1).levelL = PART_VOLUME;
     seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
-    seq.start();
+    self.start();
   };
 
   this.playIntoxication = function()
@@ -152,8 +170,7 @@ function Main()
       [0, 3]
     ];
     var bassData = [0,0,2,1,0,1];
-    document.body.innerHTML = '<canvas id="canvas1"></canvas>';
-    stop();
+    init();
     seq.setSeqParam(TEMPO, 6, 3, 5, 3, 16, 8, true, true);
     seq.setChordData(3, chordData, progressionData, bassData);
     seq.synth.setSynthParam(OSCS, 0.4, 0.8123, REVERB_VOLUME, 0.8, OUT_VOLUME);
@@ -171,7 +188,20 @@ function Main()
     seq.synth.getParams(0).levelR = PART_VOLUME;
     seq.synth.getParams(1).levelL = PART_VOLUME;
     seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
-    seq.start();
+    self.start();
+  };
+
+  var evKeyUp = function(ev)
+  {
+    if (ev.key === 'Escape')
+    {
+      self.stop();
+    }
+  };
+
+  var evDblClick = function(ev)
+  {
+    self.stop();
   };
 }
 

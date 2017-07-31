@@ -53,7 +53,7 @@ function Synthesizer()
   var reverbAddrR = 0;
   var outL = 0;
   var outR = 0;
-  var waac = null;
+  var waac = new AudioContext();
   var wasp = null;
   var waveData = [];
 
@@ -103,7 +103,7 @@ function Synthesizer()
       if (callbackCounter > callbackRate)
       {
         callbackCounter = 0;
-        callback();
+        callback(i);
       }
       render();
       bufL[i] = outL;
@@ -112,7 +112,7 @@ function Synthesizer()
   };
 
   // default callback
-  var dummy = function()
+  var dummy = function(delaySample)
   {
   };
 
@@ -120,11 +120,6 @@ function Synthesizer()
   {
     var i, reverbLBufferSize, reverbRBufferSize;
     callback = dummy;
-    if (waac)
-    {
-      waac.close();
-    }
-    waac = new AudioContext();
     reverbLSize = Math.floor(this.getSampleRate() * reverbLLength);
     reverbRSize = Math.floor(this.getSampleRate() * reverbRLength);
     reverbLBufferSize = (reverbLSize + 0x800) & (~0x7ff);
@@ -298,7 +293,6 @@ function Synthesizer()
     outR = (mixR + reverbBufferR[reverbAddrR]) * outVolume;
   };
 
-
   this.start = function()
   {
     var i;
@@ -319,6 +313,11 @@ function Synthesizer()
   this.getSampleRate = function()
   {
     return waac.sampleRate;
+  };
+
+  this.getBufferLength = function()
+  {
+    return bufferLength;
   };
 
   this.getWaveBufferSize = function()

@@ -13,13 +13,14 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-function DataSeq(satz, ch, chord, note, oct)
+function DataSeq(satz, ch, chord, note, oct, delay)
 {
   this.satz = satz;
   this.ch = ch;
   this.chord = chord;
   this.note = note;
   this.oct = oct;
+  this.delay = delay;
 }
 
 function Sequencer()
@@ -42,8 +43,9 @@ function Sequencer()
   var toneChange = true;
   var appendBass = true;
   var tempoCount = 0;
-  var scaleTable = [];
   var chordLength = 3;
+  var browserType = '';
+  var scaleTable = [];
   var chordData = [
     [0,4,7,0,0,0,0,0],
     [4,7,11,0,0,0,0,0],
@@ -79,24 +81,25 @@ function Sequencer()
 
   this.stop = function()
   {
-    if (this.synth)
+    if (self.synth)
     {
-      this.synth.stop();
+      self.synth.stop();
     }
   };
 
   this.init = function()
   {
     var i, j;
-    this.synth.init();
-    tempoCount = Math.floor(this.synth.getSampleRate() / tempo);
+    browserType = queryBrowserType();
+    self.synth.init();
+    tempoCount = Math.floor(self.synth.getSampleRate() / tempo);
 
     for (i = 0; i < scaleBufferSize; i++)
     {
-      scaleTable[i] = Math.floor(Math.pow(2.0, i / 12.0) * 440.0 * (0x100000000 / this.synth.getSampleRate() / this.synth.getWaveBufferSize()));
+      scaleTable[i] = Math.floor(Math.pow(2.0, i / 12.0) * 440.0 * (0x100000000 / self.synth.getSampleRate() / self.synth.getWaveBufferSize()));
     }
 
-    for (i = 0; i < this.synth.getOscs(); i++)
+    for (i = 0; i < self.synth.getOscs(); i++)
     {
       seqData[i] = [];
       for (j = 0; j < seqLength; j++)
@@ -114,17 +117,24 @@ function Sequencer()
     chord = 0;
     note = 0;
 
-    this.synth.setCallback(loop);
-    this.synth.setCallbackRate(tempoCount);
-    this.synth.start();
+    self.synth.setCallback(loop);
+    self.synth.setCallbackRate(tempoCount);
+    self.synth.start();
   };
 
   // callback
-  var loop = function()
+  var loop = function(delaySample)
   {
     // sequencer
     var i, ch, beat, n, mixL, mixR, mixRevL, mixRevR, reverbL, reverbR;
     var oscs = self.synth.getOscs();
+    var timeNow = Date.now();
+    var buflen = self.synth.getBufferLength();
+    if (browserType === "firefox")
+    {
+      buflen = 0;
+    }
+    var soundDelay = 1000.0 * (delaySample + buflen) / self.synth.getSampleRate();
 
     if (seqCounter >= seqLength)
     {
@@ -178,7 +188,7 @@ function Sequencer()
         n = chordData[chord][seqData[i][seqCounter].note];
         self.synth.getParams(i).pitch = scaleTable[n] << seqData[i][seqCounter].oct;
         self.synth.getParams(i).noteOn = true;
-        callbackNoteOn(new DataSeq(satzCounter, i, chord, n, seqData[i][seqCounter].oct));
+        callbackNoteOn(new DataSeq(satzCounter, i, chord, n, seqData[i][seqCounter].oct, timeNow + soundDelay));
       }
       else
       {

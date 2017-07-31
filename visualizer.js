@@ -42,21 +42,22 @@ function Visualizer()
       "}\n";
 
   var self = this;
-  var webgl;
+  var webgl = new WebGLLib();
   var sprog;
-  var vbo_pos_s;
-  var vbo_pos_e;
-  var vbo_col;
-  var vbo_otime;
+  var vboPosS;
+  var vboPosE;
+  var vboCol;
+  var vboOtime;
   var objects = 0;
   var time = 0.0;
-  var vdata_pos_s = [];
-  var vdata_pos_e = [];
-  var vdata_col = [];
-  var vdata_otime = [];
-  var obj_ptr = 0;
+  var vdataPosS = [];
+  var vdataPosE = [];
+  var vdataCol = [];
+  var vdataOtime = [];
+  var objPtr = 0;
   var speed = 0.01;
-  var master_seed = randI(0xffffffff);
+  var masterSeed = randI(0xffffffff);
+  var playing = false;
 
   this.fifo = new Fifo();
   this.randf = new RandF();
@@ -69,7 +70,7 @@ function Visualizer()
     var pos_e = [];
     var col = [];
     var otime = [];
-    self.randf.seed((data.ch << 24) ^ (data.satz << 20) ^ (data.chord << 16) ^ (data.note << 8) ^ data.oct ^ master_seed);
+    self.randf.seed((data.ch << 24) ^ (data.satz << 20) ^ (data.chord << 16) ^ (data.note << 8) ^ data.oct ^ masterSeed);
     var x = self.randf.get() * 2.0 - 1.0;
     var y = self.randf.get() * 2.0 - 1.0;
     var r = self.randf.get();
@@ -86,24 +87,34 @@ function Visualizer()
       col.push(b);
       otime.push(time + 1.0);
     }
-    webgl.updateBuffer(vbo_pos_s, pos_s, obj_ptr * 6);
-    webgl.updateBuffer(vbo_pos_e, pos_e, obj_ptr * 6);
-    webgl.updateBuffer(vbo_col, col, obj_ptr * 9);
-    webgl.updateBuffer(vbo_otime, otime, obj_ptr * 3);
-    obj_ptr++;
-    if (obj_ptr >= objects)
+    webgl.updateBuffer(vboPosS, pos_s, objPtr * 6);
+    webgl.updateBuffer(vboPosE, pos_e, objPtr * 6);
+    webgl.updateBuffer(vboCol, col, objPtr * 9);
+    webgl.updateBuffer(vboOtime, otime, objPtr * 3);
+    objPtr++;
+    if (objPtr >= objects)
     {
-      obj_ptr = 0;
+      objPtr = 0;
     }
   };
 
   // callback
   var draw = function()
   {
-    var i;
+    var i, peek, data;
+    var timeNow = Date.now();
     while (true)
     {
-      var data = self.fifo.pop();
+      peek = self.fifo.peek();
+      if (peek === undefined)
+      {
+        break;
+      }
+      else if (peek.delay > timeNow)
+      {
+        break;
+      }
+      data = self.fifo.pop();
       if (data === undefined)
       {
         break;
@@ -117,7 +128,10 @@ function Visualizer()
     webgl.uniform1f(sprog, 'dir', -1.0);
     webgl.drawTriangles(0, objects * 3);
     time += speed;
-    webgl.nextFrame();
+    if (playing === true)
+    {
+      webgl.nextFrame();
+    }
   };
 
   this.init = function(objects_arg, speed_arg)
@@ -125,8 +139,7 @@ function Visualizer()
     var i, j, k;
     objects = objects_arg;
     speed = speed_arg;
-    this.fifo.init(objects);
-    webgl = new WebGLLib();
+    self.fifo.init(objects * 16);
     webgl.init('canvas1', draw);
     sprog = webgl.createProgram(vs_s, fs_s);
     webgl.useProgram(sprog);
@@ -137,24 +150,34 @@ function Visualizer()
       {
         for (j = 0; j < 2; j++)
         {
-          vdata_pos_s.push(0.0);
-          vdata_pos_e.push(0.0);
+          vdataPosS.push(0.0);
+          vdataPosE.push(0.0);
         }
         for (j = 0; j < 3; j++)
         {
-          vdata_col.push(0.0);
+          vdataCol.push(0.0);
         }
-        vdata_otime.push(0.0);
+        vdataOtime.push(0.0);
       }
     }
 
-    vbo_pos_s = webgl.createBuffer(sprog, 'pos_s', vdata_pos_s, 2, true);
-    vbo_pos_e = webgl.createBuffer(sprog, 'pos_e', vdata_pos_e, 2, true);
-    vbo_col = webgl.createBuffer(sprog, 'col', vdata_col, 3, true);
-    vbo_otime = webgl.createBuffer(sprog, 'otime', vdata_otime, 1, true);
+    vboPosS = webgl.createBuffer(sprog, 'pos_s', vdataPosS, 2, true);
+    vboPosE = webgl.createBuffer(sprog, 'pos_e', vdataPosE, 2, true);
+    vboCol = webgl.createBuffer(sprog, 'col', vdataCol, 3, true);
+    vboOtime = webgl.createBuffer(sprog, 'otime', vdataOtime, 1, true);
 
     webgl.setBlendMode(1);
+  };
+
+  this.start = function()
+  {
+    playing = true;
     draw();
   };
 
+  this.stop = function()
+  {
+    playing = false;
+    webgl.close();
+  };
 }

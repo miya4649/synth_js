@@ -13,9 +13,78 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-var execFullScreen = function(element_id)
+var queryBrowserType = function()
 {
-  var elem = document.getElementById(element_id);
+  var type = '';
+  var ua = window.navigator.userAgent.toLowerCase();
+  if ((ua.indexOf('msie') !== -1) || (ua.indexOf('trident') !== -1))
+  {
+    type = 'msie';
+  }
+  else if (ua.indexOf('edge') !== -1)
+  {
+    type = 'edge';
+  }
+  else if (ua.indexOf('safari') !== -1)
+  {
+    type = 'safari';
+  }
+  else if (ua.indexOf('firefox') !== -1)
+  {
+    type = 'firefox';
+  }
+  else if (ua.indexOf('opera') !== -1)
+  {
+    type = 'opera';
+  }
+  else if (ua.indexOf('chrome') !== -1)
+  {
+    type = 'chrome';
+  }
+  return type;
+};
+
+var isFullScreen = function()
+{
+  var r = false;
+  if (document.fullscreenElement)
+  {
+    if (document.fullscreenElement !== null)
+    {
+      r = true;
+    }
+  }
+  else if (document.msFullscreenElement)
+  {
+    if (document.msFullscreenElement !== null)
+    {
+      r = true;
+    }
+  }
+  else if (document.webkitFullscreenElement)
+  {
+    if (document.webkitFullscreenElement !== null)
+    {
+      r = true;
+    }
+  }
+  else if (document.mozFullScreenElement)
+  {
+    if (document.mozFullScreenElement !== null)
+    {
+      r = true;
+    }
+  }
+  else if (document.mozFullScreen || document.webkitIsFullScreen)
+  {
+    r = true;
+  }
+  return r;
+};
+
+var requestFullScreen = function()
+{
+  var elem = document.documentElement;
   if (elem.requestFullscreen)
   {
     elem.requestFullscreen();
@@ -31,6 +100,42 @@ var execFullScreen = function(element_id)
   else if (elem.msRequestFullscreen)
   {
     elem.msRequestFullscreen();
+  }
+};
+
+var exitFullScreen = function()
+{
+  if (document.exitFullscreen)
+  {
+    document.exitFullscreen();
+  }
+  else if (document.webkitExitFullscreen)
+  {
+    document.webkitExitFullscreen();
+  }
+  else if (document.webkitCancelFullScreen)
+  {
+    document.webkitCancelFullScreen();
+  }
+  else if (document.mozCancelFullScreen)
+  {
+    document.mozCancelFullScreen();
+  }
+  else if (document.msExitFullscreen)
+  {
+    document.msExitFullscreen();
+  }
+};
+
+var toggleFullScreen = function()
+{
+  if (isFullScreen() === true)
+  {
+    exitFullScreen();
+  }
+  else
+  {
+    requestFullScreen();
   }
 };
 
@@ -73,6 +178,8 @@ function Fifo()
     {
       self.data[i] = null;
     }
+    self.ptr_in = 0;
+    self.ptr_out = 0;
   };
 
   this.push = function(data_arg)
@@ -108,6 +215,23 @@ function Fifo()
     }
     var d = self.data[po];
     self.ptr_out = po;
+    return d;
+  };
+
+  this.peek = function()
+  {
+    var pi = self.ptr_in;
+    var po = self.ptr_out;
+    if (pi === po)
+    {
+      return;
+    }
+    po++;
+    if (po >= objects)
+    {
+      po -= objects;
+    }
+    var d = self.data[po];
     return d;
   };
 }
