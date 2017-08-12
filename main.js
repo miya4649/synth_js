@@ -36,7 +36,7 @@ function Main()
   this.stop = function()
   {
     window.removeEventListener('keyup', evKeyUp);
-    window.removeEventListener('dblclick', evDblClick);
+    window.removeEventListener('click', evClick);
     seq.stop();
     visualizer.stop();
     document.body.innerHTML = saveDocument;
@@ -48,12 +48,17 @@ function Main()
     visualizer.fifo.push(data);
   };
 
+  var delayAddEvent = function()
+  {
+    window.addEventListener('keyup', evKeyUp);
+    window.addEventListener('click', evClick);
+  };
+
   var init = function()
   {
     saveDocument = document.body.innerHTML;
     document.body.innerHTML = '<canvas id="canvas1"></canvas>';
-    window.addEventListener('keyup', evKeyUp);
-    window.addEventListener('dblclick', evDblClick);
+    setTimeout(delayAddEvent, 3000);
   };
 
   this.playMonologue = function()
@@ -85,7 +90,7 @@ function Main()
     init();
     seq.setSeqParam(TEMPO, 16, 4, 5, 3, 16, 4, true, false);
     seq.setChordData(5, chordData, progressionData, bassData);
-    seq.synth.setSynthParam(OSCS, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME);
+    seq.synth.setSynthParam(OSCS, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -126,7 +131,7 @@ function Main()
     init();
     seq.setSeqParam(TEMPO, 8, 8, 6, 3, 16, 4, false, true);
     seq.setChordData(5, chordData, progressionData, bassData);
-    seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME);
+    seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -173,7 +178,7 @@ function Main()
     init();
     seq.setSeqParam(TEMPO, 6, 3, 5, 3, 16, 8, true, true);
     seq.setChordData(3, chordData, progressionData, bassData);
-    seq.synth.setSynthParam(OSCS, 0.4, 0.8123, REVERB_VOLUME, 0.8, OUT_VOLUME);
+    seq.synth.setSynthParam(OSCS, 0.4, 0.8123, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -193,13 +198,13 @@ function Main()
 
   var evKeyUp = function(ev)
   {
-    if (ev.key === 'Escape')
+    if ((ev.key === 'Escape') || (ev.key === 'Esc'))
     {
       self.stop();
     }
   };
 
-  var evDblClick = function(ev)
+  var evClick = function(ev)
   {
     self.stop();
   };

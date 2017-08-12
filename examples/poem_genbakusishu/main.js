@@ -531,7 +531,7 @@ function Main()
     init();
     seq.setSeqParam(TEMPO, 8, 8, 6, 3, 16, 2, false, false);
     seq.setChordData(3, chordData, progressionData, bassData);
-    seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME);
+    seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED, poem);
