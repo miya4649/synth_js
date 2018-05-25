@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2018, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -525,7 +525,7 @@ function Main()
       {text: '        ', emphasis: 1.0},
       {text: '        ', emphasis: 1.0},
       {text: '        ', emphasis: 1.0},
-      {text: '        ', emphasis: 1.0},
+      {text: '        ', emphasis: 1.0}
     ];
     var bassData = [0];
     init();

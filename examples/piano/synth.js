@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2018, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -48,12 +48,11 @@ function Synthesizer()
   var callback;
   var callbackRate = 4096;
   var callbackCounter = 0;
-  var reverbCounter = 0;
   var reverbAddrL = 0;
   var reverbAddrR = 0;
   var outL = 0;
   var outR = 0;
-  var waac = new (window.AudioContext || window.webkitAudioContext)();
+  var waac = null;
   var wasp = null;
   var waveData = [];
 
@@ -78,6 +77,7 @@ function Synthesizer()
     this.levelRev = 0;
 
     this.state = 0;
+    this.stateSave = 0;
     this.count = 0;
     this.currentLevel = 0;
     this.pitch = 0;
@@ -90,7 +90,9 @@ function Synthesizer()
     this.outRevR = 0;
     this.mixOut = false;
     this.noteOn = false;
-    this.noteOnSave = false;
+    this.limitValue = 0;
+    this.valueDiff = 0;
+    this.limitGt = false;
   }
 
   var sp_process = function(ev)
@@ -120,6 +122,10 @@ function Synthesizer()
   this.init = function()
   {
     var i, reverbLBufferSize, reverbRBufferSize;
+    if (!waac)
+    {
+      waac = new (window.AudioContext || window.webkitAudioContext)();
+    }
     callback = dummy;
     reverbLSize = Math.floor(this.getSampleRate() * reverbLLength);
     reverbRSize = Math.floor(this.getSampleRate() * reverbRLength);
@@ -166,13 +172,12 @@ function Synthesizer()
 
     reverbAddrL = 0;
     reverbAddrR = 0;
-    reverbCounter = 0;
   };
 
   // from callback
   var render = function()
   {
-    var i, waveAddrF, waveAddrR, oscOutF, oscOutR, waveAddrM, oscOut, limitValue, valueDiff, limitGt, waveAddr, mixL, mixR, mixRevL, mixRevR, reverbL, reverbR;
+    var i, waveAddrF, waveAddrR, oscOutF, oscOutR, waveAddrM, oscOut, waveAddr, mixL, mixR, mixRevL, mixRevR, reverbL, reverbR;
 
     mixL = 0;
     mixR = 0;
@@ -185,52 +190,51 @@ function Synthesizer()
       if (activeCh[i] === true)
       {
         // envelope generator
-        if ((params[i].noteOn === true) && (params[i].noteOnSave !== params[i].noteOn))
+        switch (params[i].state)
         {
-          params[i].state = STATE_ATTACK;
-        }
-        if ((params[i].noteOn === false) && (params[i].noteOnSave !== params[i].noteOn))
-        {
-          params[i].state = STATE_RELEASE;
-        }
-        params[i].noteOnSave = params[i].noteOn;
+          case STATE_SLEEP:
+          {
+            break;
+          }
 
-        if (params[i].state === STATE_SLEEP)
-        {
-          params[i].count = 0;
-          activeCh[i] = false;
-        }
+          case STATE_ATTACK:
+          {
+            params[i].currentLevel += params[i].envelopeDiffA;
+            if (params[i].currentLevel > params[i].envelopeLevelA)
+            {
+              params[i].currentLevel = params[i].envelopeLevelA;
+              params[i].state = STATE_DECAY;
+            }
+            break;
+          }
 
-        limitValue = 0;
-        valueDiff = 0;
-        limitGt = false;
+          case STATE_DECAY:
+          {
+            params[i].currentLevel += params[i].envelopeDiffD;
+            if (params[i].currentLevel < params[i].envelopeLevelS)
+            {
+              params[i].currentLevel = params[i].envelopeLevelS;
+              params[i].state = STATE_SUSTAIN;
+            }
+            break;
+          }
 
-        if (params[i].state === STATE_ATTACK)
-        {
-          limitValue = params[i].envelopeLevelA;
-          valueDiff = params[i].envelopeDiffA;
-          limitGt = true;
-        }
-        else if (params[i].state === STATE_DECAY)
-        {
-          limitValue = params[i].envelopeLevelS;
-          valueDiff = params[i].envelopeDiffD;
-          limitGt = false;
-        }
-        else if (params[i].state === STATE_RELEASE)
-        {
-          limitValue = 0;
-          valueDiff = params[i].envelopeDiffR;
-          limitGt = false;
-        }
+          case STATE_SUSTAIN:
+          {
+            break;
+          }
 
-        params[i].currentLevel += valueDiff;
-
-        if (((limitGt === true) && (params[i].currentLevel > limitValue)) ||
-            ((limitGt === false) && (params[i].currentLevel < limitValue)))
-        {
-          params[i].currentLevel = limitValue;
-          params[i].state++;
+          case STATE_RELEASE:
+          {
+            params[i].currentLevel += params[i].envelopeDiffR;
+            if (params[i].currentLevel < 0)
+            {
+              params[i].currentLevel = 0;
+              activeCh[i] = false;
+              params[i].state = STATE_SLEEP;
+            }
+            break;
+          }
         }
 
         params[i].mod0 = params[params[i].modPatch0].outData;
@@ -241,13 +245,12 @@ function Synthesizer()
                     (params[i].mod1 * params[i].modLevel1)) >>> WAVE_ADDR_SHIFT_M;
 
         // fetch wave data
-        waveAddrF = waveAddr >> FIXED_BITS;
+        waveAddrF = waveAddr >>> FIXED_BITS;
         waveAddrR = (waveAddrF + 1) & WAVE_BUFFER_SIZE_M1;
         oscOutF = waveData[waveAddrF];
         oscOutR = waveData[waveAddrR];
         waveAddrM = waveAddr & FIXED_SCALE_M1;
-        oscOut = ((oscOutF * (FIXED_SCALE - waveAddrM)) >> FIXED_BITS) +
-          ((oscOutR * waveAddrM) >> FIXED_BITS);
+        oscOut = ((oscOutF * (FIXED_SCALE - waveAddrM)) >> FIXED_BITS) + ((oscOutR * waveAddrM) >> FIXED_BITS);
         params[i].outData = (oscOut * (params[i].currentLevel >> FIXED_BITS_ENV)) >> FIXED_BITS;
         params[i].count += params[i].pitch;
 
@@ -372,5 +375,19 @@ function Synthesizer()
   this.setActiveCh = function(ch, value)
   {
     activeCh[ch] = value;
+  };
+
+  this.playNote = function(ch, noteon)
+  {
+    if ((noteon === true) && (params[ch].noteOn !== noteon))
+    {
+      params[ch].state = STATE_ATTACK;
+    }
+    if ((noteon === false) && (params[ch].noteOn !== noteon))
+    {
+      params[ch].state = STATE_RELEASE;
+    }
+    params[ch].noteOn = noteon;
+    activeCh[ch] = true;
   };
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2018, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,14 +30,23 @@ function Main()
   var ENV_VALUE_MAX = (1 << FIXED_BITS << FIXED_BITS_ENV);
   var KEYS = 29;
 
+  var STATE_ATTACK = 0;
+  var STATE_DECAY = 1;
+  var STATE_SUSTAIN = 2;
+  var STATE_RELEASE = 3;
+  var STATE_SLEEP = 4;
+
   var synth = new Synthesizer();
   var command = new Fifo();
+  var randf = new RandF();
   var scaleBufferSize = 16;
   var scaleTable = [];
   var toneDetune = [];
   var toneOct = [];
+  var toneScale = [];
   var bufferSize = 0;
   var operators = 1;
+  var keyStatus = [];
 
   var noteData = {
     z: {n:0, o:0},
@@ -78,15 +87,15 @@ function Main()
     {
       var i;
       var c = command.pop();
-      var ch, note;
+      var ch, pitch, note;
       if (c !== undefined)
       {
         for (i = 0; i < operators; i++)
         {
           ch = c.note + 12 * c.oct + i * KEYS;
-          synth.getParams(ch).pitch = scaleTable[c.note] * (1 << (c.oct + toneOct[i])) + toneDetune[i];
-          synth.getParams(ch).noteOn = c.noteOn;
-          synth.setActiveCh(ch, true);
+          pitch = Math.floor(scaleTable[c.note] * (1 << (c.oct + toneOct[i])) * toneScale[i] + toneDetune[i] * (randf.get() * 0.4 + 0.8));
+          synth.getParams(ch).pitch = pitch;
+          synth.playNote(ch, c.noteOn);
         }
       }
       else
@@ -94,6 +103,14 @@ function Main()
         break;
       }
     }
+  };
+
+  this.stop = function()
+  {
+    window.removeEventListener('keyup', evKeyUp);
+    window.removeEventListener('keydown', evKeyDown);
+    window.removeEventListener('click', evClick);
+    synth.stop();
   };
 
   this.playBrass = function()
@@ -106,10 +123,10 @@ function Main()
     operators = 2;
     var oscs = KEYS * operators;
     self.stop();
-    init();
     command.init(256);
     synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
     synth.init();
+    init();
     for (i = 0; i < KEYS; i++)
     {
       k = i;
@@ -141,16 +158,9 @@ function Main()
     for (i = 0; i < operators; i++)
     {
       toneDetune[i] = 0xffffffff / synth.getSampleRate() * (i * 2.0);
+      toneScale[i] = 1.0;
     }
     synth.start();
-  };
-
-  this.stop = function()
-  {
-    window.removeEventListener('keyup', evKeyUp);
-    window.removeEventListener('keydown', evKeyDown);
-    window.removeEventListener('click', evClick);
-    synth.stop();
   };
 
   this.playOrgan = function()
@@ -163,10 +173,10 @@ function Main()
     operators = 4;
     var oscs = KEYS * operators;
     self.stop();
-    init();
     command.init(256);
     synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
     synth.init();
+    init();
     for (i = 0; i < oscs; i++)
     {
       k = i;
@@ -187,6 +197,7 @@ function Main()
     {
       toneOct[i] = 5 + i;
       toneDetune[i] = 0xffffffff / synth.getSampleRate() * (i * 1.234567);
+      toneScale[i] = 1.0;
     }
     synth.start();
   };
@@ -201,10 +212,10 @@ function Main()
     operators = 2;
     var oscs = KEYS * operators;
     self.stop();
-    init();
     command.init(256);
     synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
     synth.init();
+    init();
     for (i = 0; i < oscs; i++)
     {
       k = i;
@@ -225,16 +236,65 @@ function Main()
     {
       toneOct[i] = 7;
       toneDetune[i] = 0xffffffff / synth.getSampleRate() * (i * 0.5);
+      toneScale[i] = 1.0;
     }
     synth.start();
   };
 
-  this.stop = function()
+  this.playStrings = function()
   {
-    window.removeEventListener('keyup', evKeyUp);
-    window.removeEventListener('keydown', evKeyDown);
-    window.removeEventListener('click', evClick);
-    synth.stop();
+    var i, j, k;
+    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
+    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var OUT_VOLUME = (1.0 / FIXED_SCALE);
+    var DEFAULT_LEVEL = (Math.floor(FIXED_SCALE / 12));
+    operators = 3;
+    var oscs = KEYS * operators;
+    self.stop();
+    command.init(256);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
+    synth.init();
+    init();
+    for (i = 0; i < KEYS; i++)
+    {
+      for (j = 0; j < 2; j++)
+      {
+        k = i + j * KEYS;
+        synth.getParams(k).envelopeLevelA = ENV_VALUE_MAX;
+        synth.getParams(k).envelopeLevelS = Math.floor(ENV_VALUE_MAX * 0.9);
+        synth.getParams(k).envelopeDiffA = ENV_VALUE_MAX >> 12;
+        synth.getParams(k).envelopeDiffD = (- ENV_VALUE_MAX) >> 14;
+        synth.getParams(k).envelopeDiffR = (- ENV_VALUE_MAX) >> 15;
+        synth.getParams(k).modLevel0 = MOD_LEVEL_MAX * 7;
+        synth.getParams(k).modPatch0 = k;
+        synth.getParams(k).levelL = DEFAULT_LEVEL;
+        synth.getParams(k).levelR = DEFAULT_LEVEL;
+        synth.getParams(k).mixOut = true;
+      }
+      k = i + KEYS;
+      synth.getParams(k).modLevel1 = Math.floor(MOD_LEVEL_MAX * 6);
+      synth.getParams(k).modPatch1 = i + 2 * KEYS;
+      k = i + 2 * KEYS;
+      synth.getParams(k).envelopeLevelA = ENV_VALUE_MAX;
+      synth.getParams(k).envelopeLevelS = ENV_VALUE_MAX;
+      synth.getParams(k).envelopeDiffA = ENV_VALUE_MAX >> 13;
+      synth.getParams(k).envelopeDiffD = (- ENV_VALUE_MAX) >> 13;
+      synth.getParams(k).envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
+      synth.getParams(k).modLevel0 = 0;
+      synth.getParams(k).modPatch0 = k;
+      synth.getParams(k).levelL = DEFAULT_LEVEL;
+      synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).mixOut = false;
+    }
+    synth.setCallbackRate(bufferSize);
+    synth.setCallback(processCommand);
+    for (i = 0; i < operators; i++)
+    {
+      toneOct[i] = 7;
+    }
+    toneDetune = [0, 0, (Math.floor(0xffffffff / synth.getSampleRate() * 3.0))];
+    toneScale = [1.0, 1.0, 0.0];
+    synth.start();
   };
 
   this.setBufferSize = function(value)
@@ -265,6 +325,7 @@ function Main()
     if (n)
     {
       command.push(new SynthCommand(n.n, false, n.n, n.o));
+      keyStatus[ev.key] = false;
     }
   };
 
@@ -273,7 +334,11 @@ function Main()
     var n = noteData[ev.key];
     if (n)
     {
-      command.push(new SynthCommand(n.n, true, n.n, n.o));
+      if (keyStatus[ev.key] !== true)
+      {
+        command.push(new SynthCommand(n.n, true, n.n, n.o));
+        keyStatus[ev.key] = true;
+      }
     }
   };
 

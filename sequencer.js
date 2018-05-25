@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2018, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -146,7 +146,7 @@ function Sequencer()
         {
           for (i = 0; i < oscs; i++)
           {
-            self.synth.getParams(i).envelopeDiffA = self.synth.getEnvValueMax() >> (randI(11) + 2);
+            self.synth.getParams(i).envelopeDiffA = self.synth.getEnvValueMax() >> (randI(9) + 4);
             self.synth.getParams(i).modLevel0 = self.synth.getModLevelMax() * randI(6);
           }
         }
@@ -187,12 +187,12 @@ function Sequencer()
       {
         n = chordData[chord][seqData[i][seqCounter].note];
         self.synth.getParams(i).pitch = scaleTable[n] << seqData[i][seqCounter].oct;
-        self.synth.getParams(i).noteOn = true;
+        self.synth.playNote(i, true);
         callbackNoteOn(new DataSeq(satzCounter, i, chord, n, seqData[i][seqCounter].oct, timeNow + soundDelay));
       }
       else
       {
-        self.synth.getParams(i).noteOn = false;
+        self.synth.playNote(i, false);
       }
     }
     seqCounter++;

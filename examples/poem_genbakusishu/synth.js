@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2018, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -48,18 +48,18 @@ function Synthesizer()
   var callback;
   var callbackRate = 4096;
   var callbackCounter = 0;
-  var reverbCounter = 0;
   var reverbAddrL = 0;
   var reverbAddrR = 0;
   var outL = 0;
   var outR = 0;
-  var waac = new (window.AudioContext || window.webkitAudioContext)();
+  var waac = null;
   var wasp = null;
   var waveData = [];
 
   var reverbBufferL = [];
   var reverbBufferR = [];
   var params = [];
+  var activeCh = [];
 
   function Param()
   {
@@ -77,6 +77,7 @@ function Synthesizer()
     this.levelRev = 0;
 
     this.state = 0;
+    this.stateSave = 0;
     this.count = 0;
     this.currentLevel = 0;
     this.pitch = 0;
@@ -89,7 +90,9 @@ function Synthesizer()
     this.outRevR = 0;
     this.mixOut = false;
     this.noteOn = false;
-    this.noteOnSave = false;
+    this.limitValue = 0;
+    this.valueDiff = 0;
+    this.limitGt = false;
   }
 
   var sp_process = function(ev)
@@ -119,6 +122,10 @@ function Synthesizer()
   this.init = function()
   {
     var i, reverbLBufferSize, reverbRBufferSize;
+    if (!waac)
+    {
+      waac = new (window.AudioContext || window.webkitAudioContext)();
+    }
     callback = dummy;
     reverbLSize = Math.floor(this.getSampleRate() * reverbLLength);
     reverbRSize = Math.floor(this.getSampleRate() * reverbRLength);
@@ -142,6 +149,8 @@ function Synthesizer()
 
     for (i = 0; i < oscs; i++)
     {
+      activeCh[i] = false;
+
       params[i] = new Param();
 
       params[i].state = STATE_SLEEP;
@@ -163,119 +172,109 @@ function Synthesizer()
 
     reverbAddrL = 0;
     reverbAddrR = 0;
-    reverbCounter = 0;
   };
 
   // from callback
   var render = function()
   {
-    var i, waveAddrF, waveAddrR, oscOutF, oscOutR, waveAddrM, oscOut, limitValue, valueDiff, limitGt, waveAddr, mixL, mixR, mixRevL, mixRevR, reverbL, reverbR;
-    // patch
-    for (i = 0; i < oscs; i++)
-    {
-      params[i].mod0 = params[params[i].modPatch0].outData;
-      params[i].mod1 = params[params[i].modPatch1].outData;
-    }
+    var i, waveAddrF, waveAddrR, oscOutF, oscOutR, waveAddrM, oscOut, waveAddr, mixL, mixR, mixRevL, mixRevR, reverbL, reverbR;
 
-    // synth
-    for (i = 0; i < oscs; i++)
-    {
-      // envelope generator
-      if ((params[i].noteOn === true) && (params[i].noteOnSave !== params[i].noteOn))
-      {
-        params[i].state = STATE_ATTACK;
-      }
-      if ((params[i].noteOn === false) && (params[i].noteOnSave !== params[i].noteOn))
-      {
-        params[i].state = STATE_RELEASE;
-      }
-      params[i].noteOnSave = params[i].noteOn;
-
-      if (params[i].state === STATE_SLEEP)
-      {
-        params[i].count = 0;
-        continue;
-      }
-
-      limitValue = 0;
-      valueDiff = 0;
-      limitGt = false;
-
-      if (params[i].state === STATE_ATTACK)
-      {
-        limitValue = params[i].envelopeLevelA;
-        valueDiff = params[i].envelopeDiffA;
-        limitGt = true;
-      }
-      else if (params[i].state === STATE_DECAY)
-      {
-        limitValue = params[i].envelopeLevelS;
-        valueDiff = params[i].envelopeDiffD;
-        limitGt = false;
-      }
-      else if (params[i].state === STATE_RELEASE)
-      {
-        limitValue = 0;
-        valueDiff = params[i].envelopeDiffR;
-        limitGt = false;
-      }
-
-      params[i].currentLevel += valueDiff;
-
-      if (((limitGt === true) && (params[i].currentLevel > limitValue)) ||
-          ((limitGt === false) && (params[i].currentLevel < limitValue)))
-      {
-        params[i].currentLevel = limitValue;
-        params[i].state++;
-      }
-
-      waveAddr = (params[i].count +
-                  (params[i].mod0 * params[i].modLevel0) +
-                  (params[i].mod1 * params[i].modLevel1)) >>> WAVE_ADDR_SHIFT_M;
-
-      // fetch wave data
-      waveAddrF = waveAddr >> FIXED_BITS;
-      waveAddrR = (waveAddrF + 1) & WAVE_BUFFER_SIZE_M1;
-      oscOutF = waveData[waveAddrF];
-      oscOutR = waveData[waveAddrR];
-      waveAddrM = waveAddr & FIXED_SCALE_M1;
-      oscOut = ((oscOutF * (FIXED_SCALE - waveAddrM)) >> FIXED_BITS) +
-        ((oscOutR * waveAddrM) >> FIXED_BITS);
-      params[i].outData = (oscOut * (params[i].currentLevel >> FIXED_BITS_ENV)) >> FIXED_BITS;
-      params[i].count += params[i].pitch;
-
-      // mix
-      if (params[i].mixOut === 0)
-      {
-        params[i].outWaveL = 0;
-        params[i].outWaveR = 0;
-        params[i].outRevL = 0;
-        params[i].outRevR = 0;
-      }
-      else
-      {
-        params[i].outWaveL = (params[i].outData * params[i].levelL) >> FIXED_BITS;
-        params[i].outWaveR = (params[i].outData * params[i].levelR) >> FIXED_BITS;
-        params[i].outRevL = (params[i].outWaveL * params[i].levelRev) >> FIXED_BITS;
-        params[i].outRevR = (params[i].outWaveR * params[i].levelRev) >> FIXED_BITS;
-      }
-    }
-
-    // mixing
     mixL = 0;
     mixR = 0;
     mixRevL = 0;
     mixRevR = 0;
+
+    // synth
     for (i = 0; i < oscs; i++)
     {
-      if (params[i].state === STATE_SLEEP)
+      if (activeCh[i] === true)
       {
-        continue;
+        // envelope generator
+        switch (params[i].state)
+        {
+          case STATE_SLEEP:
+          {
+            break;
+          }
+
+          case STATE_ATTACK:
+          {
+            params[i].currentLevel += params[i].envelopeDiffA;
+            if (params[i].currentLevel > params[i].envelopeLevelA)
+            {
+              params[i].currentLevel = params[i].envelopeLevelA;
+              params[i].state = STATE_DECAY;
+            }
+            break;
+          }
+
+          case STATE_DECAY:
+          {
+            params[i].currentLevel += params[i].envelopeDiffD;
+            if (params[i].currentLevel < params[i].envelopeLevelS)
+            {
+              params[i].currentLevel = params[i].envelopeLevelS;
+              params[i].state = STATE_SUSTAIN;
+            }
+            break;
+          }
+
+          case STATE_SUSTAIN:
+          {
+            break;
+          }
+
+          case STATE_RELEASE:
+          {
+            params[i].currentLevel += params[i].envelopeDiffR;
+            if (params[i].currentLevel < 0)
+            {
+              params[i].currentLevel = 0;
+              activeCh[i] = false;
+              params[i].state = STATE_SLEEP;
+            }
+            break;
+          }
+        }
+
+        params[i].mod0 = params[params[i].modPatch0].outData;
+        params[i].mod1 = params[params[i].modPatch1].outData;
+
+        waveAddr = (params[i].count +
+                    (params[i].mod0 * params[i].modLevel0) +
+                    (params[i].mod1 * params[i].modLevel1)) >>> WAVE_ADDR_SHIFT_M;
+
+        // fetch wave data
+        waveAddrF = waveAddr >>> FIXED_BITS;
+        waveAddrR = (waveAddrF + 1) & WAVE_BUFFER_SIZE_M1;
+        oscOutF = waveData[waveAddrF];
+        oscOutR = waveData[waveAddrR];
+        waveAddrM = waveAddr & FIXED_SCALE_M1;
+        oscOut = ((oscOutF * (FIXED_SCALE - waveAddrM)) >> FIXED_BITS) + ((oscOutR * waveAddrM) >> FIXED_BITS);
+        params[i].outData = (oscOut * (params[i].currentLevel >> FIXED_BITS_ENV)) >> FIXED_BITS;
+        params[i].count += params[i].pitch;
+
+        // mix
+        if (params[i].mixOut === false)
+        {
+          params[i].outWaveL = 0;
+          params[i].outWaveR = 0;
+          params[i].outRevL = 0;
+          params[i].outRevR = 0;
+        }
+        else
+        {
+          params[i].outWaveL = (params[i].outData * params[i].levelL) >> FIXED_BITS;
+          params[i].outWaveR = (params[i].outData * params[i].levelR) >> FIXED_BITS;
+          params[i].outRevL = (params[i].outWaveL * params[i].levelRev) >> FIXED_BITS;
+          params[i].outRevR = (params[i].outWaveR * params[i].levelRev) >> FIXED_BITS;
+        }
+
+        mixL += params[i].outWaveL;
+        mixR += params[i].outWaveR;
+        mixRevL += params[i].outRevL;
+        mixRevR += params[i].outRevR;
       }
-      mixL += params[i].outWaveL;
-      mixR += params[i].outWaveR;
-      mixRevL += params[i].outRevL;
-      mixRevR += params[i].outRevR;
     }
 
     // reverb
@@ -371,5 +370,24 @@ function Synthesizer()
     reverbDecay = reverbDecay_arg;
     outVolume = outVolume_arg;
     bufferLength = bufferLength_arg;
+  };
+
+  this.setActiveCh = function(ch, value)
+  {
+    activeCh[ch] = value;
+  };
+
+  this.playNote = function(ch, noteon)
+  {
+    if ((noteon === true) && (params[ch].noteOn !== noteon))
+    {
+      params[ch].state = STATE_ATTACK;
+    }
+    if ((noteon === false) && (params[ch].noteOn !== noteon))
+    {
+      params[ch].state = STATE_RELEASE;
+    }
+    params[ch].noteOn = noteon;
+    activeCh[ch] = true;
   };
 }
