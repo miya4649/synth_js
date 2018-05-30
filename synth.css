@@ -2,53 +2,54 @@
 /* (C) miya. All rights reserved. */
 
 html {
-    margin: 0px;
-    padding: 0px;
-    height: 100%;
+margin: 0;
+padding: 0;
+height: 100%;
 }
 
 body {
-    margin: 0px;
-    padding: 0px;
-    font-size: 12pt;
-    background-color: #000000;
-    height: 100%;
+margin: 0;
+padding: 0;
+font-size: 1rem;
+background-color: #000000;
+height: 100%;
 }
 
 canvas {
-    margin: 0px;
-    padding: 0px;
-    vertical-align: bottom;
+margin: 0;
+padding: 0;
+vertical-align: bottom;
 }
 
-div#topmenu {
-    text-align: center;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
+div.topmenu {
+text-align: center;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #ffffff;
 }
 
-span#toplogo {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 24pt;
+span.toplogo {
+font-family: "Times New Roman", Times, serif;
+font-size: 2rem;
 }
 
-span#toplink {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 12pt;
+span.toplink {
+font-family: "Times New Roman", Times, serif;
+font-size: 1rem;
 }
 
-span#barcolor {
-    font-weight: bold;
-    color: #0080ff;
+span.barcolor {
+font-weight: bold;
+color: #0080ff;
 }
 
-span#button {
-    cursor: pointer;
+span.button {
+cursor: pointer;
+white-space: nowrap;
 }
 
-span#button:hover {
-    text-decoration: underline;
+span.button:hover {
+text-decoration: underline;
 }
