@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017-2018, miya
+  Copyright (c) 2017-2019, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -13,14 +13,6 @@
   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-function SynthCommand(osc_arg, noteOn_arg, note_arg, oct_arg)
-{
-  this.osc = osc_arg;
-  this.noteOn = noteOn_arg;
-  this.note = note_arg;
-  this.oct = oct_arg;
-}
-
 function Main()
 {
   var self = this;
@@ -29,12 +21,6 @@ function Main()
   var FIXED_SCALE = (1 << FIXED_BITS);
   var ENV_VALUE_MAX = (1 << FIXED_BITS << FIXED_BITS_ENV);
   var KEYS = 29;
-
-  var STATE_ATTACK = 0;
-  var STATE_DECAY = 1;
-  var STATE_SUSTAIN = 2;
-  var STATE_RELEASE = 3;
-  var STATE_SLEEP = 4;
 
   var synth = new Synthesizer();
   var command = new Fifo();
@@ -78,31 +64,6 @@ function Main()
     o: {n:2, o:2},
     0: {n:3, o:2},
     p: {n:4, o:2}
-  };
-
-  // callback
-  var processCommand = function(delaySamples)
-  {
-    while (true)
-    {
-      var i;
-      var c = command.pop();
-      var ch, pitch, note;
-      if (c !== undefined)
-      {
-        for (i = 0; i < operators; i++)
-        {
-          ch = c.note + 12 * c.oct + i * KEYS;
-          pitch = Math.floor(scaleTable[c.note] * (1 << (c.oct + toneOct[i])) * toneScale[i] + toneDetune[i] * (randf.get() * 0.4 + 0.8));
-          synth.getParams(ch).pitch = pitch;
-          synth.playNote(ch, c.noteOn);
-        }
-      }
-      else
-      {
-        break;
-      }
-    }
   };
 
   this.stop = function()
@@ -152,8 +113,6 @@ function Main()
       synth.getParams(k).levelR = DEFAULT_LEVEL;
       synth.getParams(k).mixOut = false;
     }
-    synth.setCallbackRate(bufferSize);
-    synth.setCallback(processCommand);
     toneOct = [6, 6];
     for (i = 0; i < operators; i++)
     {
@@ -191,8 +150,6 @@ function Main()
       synth.getParams(k).levelR = DEFAULT_LEVEL;
       synth.getParams(k).mixOut = true;
     }
-    synth.setCallbackRate(bufferSize);
-    synth.setCallback(processCommand);
     for (i = 0; i < operators; i++)
     {
       toneOct[i] = 5 + i;
@@ -230,8 +187,6 @@ function Main()
       synth.getParams(k).levelR = DEFAULT_LEVEL;
       synth.getParams(k).mixOut = true;
     }
-    synth.setCallbackRate(bufferSize);
-    synth.setCallback(processCommand);
     for (i = 0; i < operators; i++)
     {
       toneOct[i] = 7;
@@ -286,14 +241,115 @@ function Main()
       synth.getParams(k).levelR = DEFAULT_LEVEL;
       synth.getParams(k).mixOut = false;
     }
-    synth.setCallbackRate(bufferSize);
-    synth.setCallback(processCommand);
     for (i = 0; i < operators; i++)
     {
       toneOct[i] = 7;
     }
     toneDetune = [0, 0, (Math.floor(0xffffffff / synth.getSampleRate() * 3.0))];
     toneScale = [1.0, 1.0, 0.0];
+    synth.start();
+  };
+
+  this.playElecOrgan = function()
+  {
+    var i, j, k;
+    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
+    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var OUT_VOLUME = (1.0 / FIXED_SCALE);
+    var DEFAULT_LEVEL = (Math.floor(FIXED_SCALE / 10));
+    operators = 4;
+    var oscs = KEYS * operators;
+    self.stop();
+    command.init(256);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
+    synth.init();
+    init();
+    for (j = 0; j < KEYS; j++)
+    {
+      for (i = 0; i < operators; i++)
+      {
+        k = i * KEYS + j;
+        synth.getParams(k).envelopeLevelA = ENV_VALUE_MAX;
+        synth.getParams(k).envelopeLevelS = ENV_VALUE_MAX * 0.8;
+        synth.getParams(k).envelopeDiffA = ENV_VALUE_MAX >> 7;
+        synth.getParams(k).envelopeDiffD = (- ENV_VALUE_MAX) >> 7;
+        synth.getParams(k).envelopeDiffR = (- ENV_VALUE_MAX) >> 12;
+        synth.getParams(k).modLevel0 = MOD_LEVEL_MAX << 1;
+        synth.getParams(k).modPatch0 = k;
+        synth.getParams(k).levelL = DEFAULT_LEVEL;
+        synth.getParams(k).levelR = DEFAULT_LEVEL;
+        synth.getParams(k).mixOut = true;
+      }
+      synth.getParams(0 * KEYS + j).modPatch0 = 1 * KEYS + j;
+      synth.getParams(1 * KEYS + j).modPatch0 = 1 * KEYS + j;
+      synth.getParams(2 * KEYS + j).modPatch0 = 3 * KEYS + j;
+      synth.getParams(3 * KEYS + j).modPatch0 = 3 * KEYS + j;
+      synth.getParams(1 * KEYS + j).mixOut = false;
+      synth.getParams(3 * KEYS + j).mixOut = false;
+      synth.getParams(1 * KEYS + j).modLevel0 = 0;
+      synth.getParams(3 * KEYS + j).modLevel0 = 0;
+    }
+    for (i = 0; i < operators; i++)
+    {
+      toneOct[i] = 7;
+      toneDetune[i] = 0xffffffff / synth.getSampleRate() * (i / 2.0);
+      toneScale[i] = 1.0;
+    }
+    toneOct[1] = 6;
+    toneOct[3] = 6;
+    synth.start();
+  };
+
+  this.playCello = function()
+  {
+    var i, j, k;
+    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
+    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var OUT_VOLUME = (1.0 / FIXED_SCALE);
+    var DEFAULT_LEVEL = (Math.floor(FIXED_SCALE / 11));
+    operators = 2;
+    var oscs = KEYS * operators;
+    self.stop();
+    command.init(256);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
+    synth.init();
+    init();
+    for (i = 0; i < KEYS; i++)
+    {
+      synth.getParams(i).envelopeLevelA = ENV_VALUE_MAX;
+      synth.getParams(i).envelopeLevelS = ENV_VALUE_MAX;
+      synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> 11;
+      synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 12;
+      synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 14;
+      synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * 5;
+      synth.getParams(i).modPatch0 = i;
+      synth.getParams(i).modLevel1 = MOD_LEVEL_MAX * 10;
+      synth.getParams(i).modPatch1 = i + KEYS;
+      synth.getParams(i).levelL = DEFAULT_LEVEL;
+      synth.getParams(i).levelR = DEFAULT_LEVEL;
+      synth.getParams(i).mixOut = true;
+    }
+    for (i = KEYS; i < KEYS * 2; i++)
+    {
+      synth.getParams(i).envelopeLevelA = ENV_VALUE_MAX;
+      synth.getParams(i).envelopeLevelS = ENV_VALUE_MAX * 0.7;
+      synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> 5;
+      synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 17;
+      synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 14;
+      synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * 0;
+      synth.getParams(i).modPatch0 = i;
+      synth.getParams(i).modLevel1 = 0;
+      synth.getParams(i).modPatch1 = i;
+      synth.getParams(i).levelL = DEFAULT_LEVEL;
+      synth.getParams(i).levelR = DEFAULT_LEVEL;
+      synth.getParams(i).mixOut = false;
+    }
+    for (i = 0; i < operators; i++)
+    {
+      toneOct[i] = 5 + i * 2;
+      toneDetune[i] = 0.0;
+      toneScale[i] = 1.0;
+    }
     synth.start();
   };
 
@@ -317,6 +373,7 @@ function Main()
 
   var evKeyUp = function(ev)
   {
+    var i;
     if ((ev.key === 'Escape') || (ev.key === 'Esc'))
     {
       self.stop();
@@ -324,19 +381,30 @@ function Main()
     var n = noteData[ev.key];
     if (n)
     {
-      command.push(new SynthCommand(n.n, false, n.n, n.o));
+      for (i = 0; i < operators; i++)
+      {
+        var ch = n.n + 12 * n.o + i * KEYS;
+        synth.playNote(ch, false);
+      }
       keyStatus[ev.key] = false;
     }
   };
 
   var evKeyDown = function(ev)
   {
+    var i, pitch;
     var n = noteData[ev.key];
     if (n)
     {
       if (keyStatus[ev.key] !== true)
       {
-        command.push(new SynthCommand(n.n, true, n.n, n.o));
+        for (i = 0; i < operators; i++)
+        {
+          var ch = n.n + 12 * n.o + i * KEYS;
+          pitch = Math.floor(scaleTable[n.n] * (1 << (n.o + toneOct[i])) * toneScale[i] + toneDetune[i] * (randf.get() * 0.4 + 0.8));
+          synth.getParams(ch).pitch = pitch;
+          synth.playNote(ch, true);
+        }
         keyStatus[ev.key] = true;
       }
     }

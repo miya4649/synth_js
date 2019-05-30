@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017-2018, miya
+  Copyright (c) 2017-2019, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -300,7 +300,6 @@ function Synthesizer()
 
   this.start = function()
   {
-    var i;
     wasp = waac.createScriptProcessor(bufferLength, 0, 2);
     bufferLength = wasp.bufferSize;
     wasp.onaudioprocess = sp_process;
@@ -335,11 +334,6 @@ function Synthesizer()
     return ENV_VALUE_MAX;
   };
 
-  this.getOscs = function()
-  {
-    return oscs;
-  };
-
   this.getModLevelMax = function()
   {
     return MOD_LEVEL_MAX;
@@ -372,22 +366,18 @@ function Synthesizer()
     bufferLength = bufferLength_arg;
   };
 
-  this.setActiveCh = function(ch, value)
-  {
-    activeCh[ch] = value;
-  };
-
   this.playNote = function(ch, noteon)
   {
-    if ((noteon === true) && (params[ch].noteOn !== noteon))
+    if (noteon === true)
     {
       params[ch].state = STATE_ATTACK;
+      params[ch].noteOn = true;
+      activeCh[ch] = true;
     }
-    if ((noteon === false) && (params[ch].noteOn !== noteon))
+    else
     {
       params[ch].state = STATE_RELEASE;
+      params[ch].noteOn = false;
     }
-    params[ch].noteOn = noteon;
-    activeCh[ch] = true;
   };
 }

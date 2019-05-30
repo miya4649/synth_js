@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Piano</title>
 <script src="stlib.js"></script>
 <script src="synth.js"></script>
@@ -11,11 +12,13 @@
 
 <h1>Piano</h1>
 
-<input type="button" value="Brass" onclick="main.playBrass();" />&nbsp;
-<input type="button" value="Organ" onclick="main.playOrgan();" />&nbsp;
-<input type="button" value="Piano" onclick="main.playPiano();" />&nbsp;
-<input type="button" value="Strings" onclick="main.playStrings();" />&nbsp;
-<input type="button" value="stop" onclick="main.stop();" />&nbsp;
+<input type="button" value="Brass" onclick="main.playBrass();">
+<input type="button" value="Organ" onclick="main.playOrgan();">
+<input type="button" value="E.Organ" onclick="main.playElecOrgan();">
+<input type="button" value="Piano" onclick="main.playPiano();">
+<input type="button" value="Strings" onclick="main.playStrings();">
+<input type="button" value="Cello" onclick="main.playCello();">
+<input type="button" value="stop" onclick="main.stop();">
 Buffer Size: <select name="buffersize" onchange="main.setBufferSize(this.value);">
 <option value="0">Auto</option>
 <option value="256">256</option>
@@ -26,7 +29,7 @@ Buffer Size: <select name="buffersize" onchange="main.setBufferSize(this.value);
 <option value="8192">8192</option>
 <option value="16384">16384</option>
 </select>
-<br />
+<br>
 
 </body>
 </html>

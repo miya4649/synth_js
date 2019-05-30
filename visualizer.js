@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017, miya
+  Copyright (c) 2017-2019, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -65,7 +65,7 @@ function Visualizer()
   // callback sub
   var addObj = function(data)
   {
-    var i, j, k;
+    var i;
     var pos_s = [];
     var pos_e = [];
     var col = [];
@@ -101,7 +101,7 @@ function Visualizer()
   // callback
   var draw = function()
   {
-    var i, peek, data;
+    var peek, data;
     var timeNow = Date.now();
     while (true)
     {
