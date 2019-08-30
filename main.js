@@ -66,10 +66,10 @@ function Main ()
     var i;
     var OPS = 1;
     var CHANNELS = 4;
-    var TEMPO = 6.0;
+    var TEMPO = 5.85;
     var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS));
     var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
-    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 0.8));
     var OUT_VOLUME = (1.0 / FIXED_SCALE);
     var chordData = [
       [0,2,4,7,11,0,0,0],
@@ -80,19 +80,23 @@ function Main ()
       [2,5,7,9,11,0,0,0]
     ];
     var progressionData = [
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 3]
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [3, 0,1,2,0,0,0,0]
     ];
     var bassData = [0,1,3,2,1,2];
-    var bassPattern = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+    var bassPattern = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    for (i = 0; i < 3; i++)
+    {
+      bassPattern[randI(12)] = 1;
+    }
     init();
-    seq.setSeqParam(TEMPO, 16, 5, 3, 16, 4, true, false, OPS, CHANNELS);
+    seq.setSeqParam(TEMPO, 16, 5, 3, 4, 16, 4, true, true, false, OPS, CHANNELS, 6);
     seq.setChordData(5, chordData, progressionData, bassData, bassPattern);
-    seq.synth.setSynthParam(OPS * CHANNELS, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, 0);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.233, 0.181, 0.6, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -102,65 +106,12 @@ function Main ()
       seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 15;
       seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
       seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX;
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
     }
-    seq.synth.getParams(0).levelL = PART_VOLUME >> 1;
-    seq.synth.getParams(0).levelR = PART_VOLUME;
-    seq.synth.getParams(1).levelL = PART_VOLUME;
-    seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
-    self.start();
-  };
-
-  this.playPentagon = function()
-  {
-    var i, osc;
-    var OPS = 2;
-    var CHANNELS = 4;
-    var TEMPO = 6.0;
-    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS));
-    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
-    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
-    var OUT_VOLUME = (1.0 / FIXED_SCALE);
-
-    var chordData = [
-      [0,2,4,7,9,0,0,0],
-      [0,2,4,7,9,0,0,0],
-      [0,2,4,7,9,0,0,0]
-    ];
-    var progressionData = [
-      [0, 3],
-      [0, 3],
-      [0, 3]
-    ];
-    var bassData = [4,2,1];
-    var bassPattern = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-    for (i = 0; i < 3; i++)
-    {
-      bassPattern[randI(12)] = 1;
-    }
-    init();
-    seq.setSeqParam(TEMPO, 16, 6, 2, 8, 4, true, true, OPS, CHANNELS);
-    seq.setChordData(5, chordData, progressionData, bassData, bassPattern);
-    seq.synth.setSynthParam(OPS * CHANNELS, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, 0);
-    seq.setCallback(noteOnCallback);
-    seq.init();
-    visualizer.init(OBJECTS, TEMPO * VSPEED);
-    for (i = 0; i < OPS * CHANNELS; i++)
-    {
-      seq.synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> (randI(9) + 4);
-      seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> (randI(9) + 13);
-      seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
-      seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * randI(6);
-    }
-    for (i = 0; i < CHANNELS; i++)
-    {
-      osc = i * OPS;
-      seq.synth.getParams(osc).modPatch0 = osc + 1;
-      seq.synth.getParams(osc + 1).modPatch0 = osc + 1;
-      seq.synth.getParams(osc + 1).modLevel0 = 0;
-      seq.synth.getParams(osc + 1).mixOut = false;
-    }
-    seq.synth.getParams(0).levelL = PART_VOLUME >> 1;
-    seq.synth.getParams(0).levelR = PART_VOLUME;
+    seq.synth.getParams(1).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelR = PART_VOLUME;
     seq.synth.getParams(2).levelL = PART_VOLUME;
     seq.synth.getParams(2).levelR = PART_VOLUME >> 1;
     self.start();
@@ -172,9 +123,9 @@ function Main ()
     var OPS = 1;
     var CHANNELS = 4;
     var TEMPO = 1.0;
-    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS));
+    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS * 0.8));
     var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.3));
-    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 1.0));
     var OUT_VOLUME = (1.0 / FIXED_SCALE);
     var chordData = [
       [0,2,4,5,7,0,0,0],
@@ -182,16 +133,16 @@ function Main ()
       [0,2,5,7,11,0,0,0]
     ];
     var progressionData = [
-      [0, 3],
-      [0, 3],
-      [0, 1]
+      [3, 0,1,2,0,0,0,0],
+      [3, 0,1,2,0,0,0,0],
+      [1, 0,0,0,0,0,0,0]
     ];
     var bassData = [0,2,3];
     var bassPattern = [1,0,0,0,1,0,0,0];
     init();
-    seq.setSeqParam(TEMPO, 8, 6, 3, 16, 4, false, true, OPS, CHANNELS);
+    seq.setSeqParam(TEMPO, 8, 6, 3, 4, 16, 4, false, true, false, OPS, CHANNELS, 6);
     seq.setChordData(5, chordData, progressionData, bassData, bassPattern);
-    seq.synth.setSynthParam(OPS * CHANNELS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.557278911565, 0.519439673469, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -201,11 +152,14 @@ function Main ()
       seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 17;
       seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 15;
       seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX;
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
     }
-    seq.synth.getParams(0).levelL = PART_VOLUME >> 1;
-    seq.synth.getParams(0).levelR = PART_VOLUME;
-    seq.synth.getParams(1).levelL = PART_VOLUME;
-    seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelR = PART_VOLUME;
+    seq.synth.getParams(2).levelL = PART_VOLUME;
+    seq.synth.getParams(2).levelR = PART_VOLUME >> 1;
     self.start();
   };
 
@@ -215,9 +169,9 @@ function Main ()
     var OPS = 1;
     var CHANNELS = 4;
     var TEMPO = 5.0;
-    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS));
+    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS * 0.8));
     var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
-    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 1.5));
     var OUT_VOLUME = (1.0 / FIXED_SCALE);
     var chordData = [
       [0,4,7,0,0,0,0,0],
@@ -228,19 +182,19 @@ function Main ()
       [2,7,11,0,0,0,0,0]
     ];
     var progressionData = [
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 6],
-      [0, 3]
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [6, 0,1,2,3,4,5,0],
+      [3, 0,1,2,0,0,0,0]
     ];
     var bassData = [0,0,2,1,0,1];
     var bassPattern = [1,0,0,1,0,0];
     init();
-    seq.setSeqParam(TEMPO, 6, 5, 3, 16, 8, true, true, OPS, CHANNELS);
+    seq.setSeqParam(TEMPO, 6, 5, 3, 4, 16, 8, true, true, false, OPS, CHANNELS, 6);
     seq.setChordData(3, chordData, progressionData, bassData, bassPattern);
-    seq.synth.setSynthParam(OPS * CHANNELS, 0.4, 0.8123, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.4, 0.8123, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED);
@@ -250,11 +204,140 @@ function Main ()
       seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 15;
       seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
       seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * randI(6);
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
     }
-    seq.synth.getParams(0).levelL = PART_VOLUME >> 1;
-    seq.synth.getParams(0).levelR = PART_VOLUME;
-    seq.synth.getParams(1).levelL = PART_VOLUME;
-    seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelR = PART_VOLUME;
+    seq.synth.getParams(2).levelL = PART_VOLUME;
+    seq.synth.getParams(2).levelR = PART_VOLUME >> 1;
+    self.start();
+  };
+
+  this.playPentagon = function()
+  {
+    var i, osc;
+    var OPS = 2;
+    var CHANNELS = 4;
+    var TEMPO = 5.85;
+    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS));
+    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 0.9));
+    var OUT_VOLUME = (1.0 / FIXED_SCALE);
+
+    var chordData = [
+      [0,2,4,7,9,0,0,0],
+      [0,2,4,7,9,0,0,0],
+      [0,2,4,7,9,0,0,0]
+    ];
+    var progressionData = [  
+      [3, 0,1,2,0,0,0,0],
+      [3, 0,1,2,0,0,0,0],
+      [3, 0,1,2,0,0,0,0]
+    ];
+    var bassData = [4,2,1];
+    var bassPattern = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    for (i = 0; i < 3; i++)
+    {
+      bassPattern[randI(12)] = 1;
+    }
+    init();
+    seq.setSeqParam(TEMPO, 16, 6, 2, 6, 12, 4, true, true, true, OPS, CHANNELS, 6);
+    seq.setChordData(5, chordData, progressionData, bassData, bassPattern);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.33792, 0.1553, 0.7, OUT_VOLUME, 0);
+    seq.setCallback(noteOnCallback);
+    seq.init();
+    visualizer.init(OBJECTS, TEMPO * VSPEED);
+    for (i = 0; i < OPS * CHANNELS; i++)
+    {
+      seq.synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> (randI(9) + 4);
+      seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> (randI(9) + 13);
+      seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
+      seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * randI(6);
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
+    }
+    for (i = 0; i < CHANNELS; i++)
+    {
+      osc = i * OPS;
+      seq.synth.getParams(osc).modPatch0 = osc + 1;
+      seq.synth.getParams(osc + 1).modPatch0 = osc + 1;
+      seq.synth.getParams(osc + 1).modLevel0 = 0;
+      seq.synth.getParams(osc + 1).mixOut = false;
+    }
+    seq.synth.getParams(2).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(2).levelR = PART_VOLUME;
+    seq.synth.getParams(4).levelL = PART_VOLUME;
+    seq.synth.getParams(4).levelR = PART_VOLUME >> 1;
+    self.start();
+  };
+
+  this.playEuphoria = function()
+  {
+    var i, osc, j;
+    var OPS = 2;
+    var CHANNELS = 4;
+    var TEMPO = 3.8;
+    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS * 0.5));
+    var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 1.5));
+    var OUT_VOLUME = (1.0 / FIXED_SCALE);
+
+    var chordData = [
+      [0,2,4,7,0,0,0,0],
+      [0,4,7,9,0,0,0,0],
+      [0,2,5,9,0,0,0,0],
+      [0,5,7,9,0,0,0,0],
+      [2,4,7,11,0,0,0,0],
+      [2,5,7,11,0,0,0,0]
+    ];
+    var progressionData = [
+      [4, 2,3,4,5,0,0,0],
+      [4, 2,3,4,5,0,0,0],
+      [4, 0,1,4,5,0,0,0],
+      [4, 0,1,4,5,0,0,0],
+      [2, 0,1,0,0,0,0,0],
+      [2, 0,1,0,0,0,0,0]
+    ];
+    var bassData = [0,0,2,1,2,2];
+    var bassPattern = [1,0,0,0,0,0,0,0];
+    for (i = 0; i < 2; i++)
+    {
+      bassPattern[randI(6)] = 1;
+    }
+    init();
+    seq.setSeqParam(TEMPO, 8, 6, 4, 6, 32, 4, false, true, false, OPS, CHANNELS, 3);
+    seq.setChordData(4, chordData, progressionData, bassData, bassPattern);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.33792, 0.1553, 0.8, OUT_VOLUME, 0);
+    seq.setCallback(noteOnCallback);
+    seq.init();
+    visualizer.init(OBJECTS, TEMPO * VSPEED);
+    for (i = 0; i < OPS * CHANNELS; i++)
+    {
+      seq.synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> 5;
+      seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 14;
+      seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 16;
+      seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX * 4;
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
+    }
+    for (i = 0; i < CHANNELS; i++)
+    {
+      osc = i * OPS;
+      seq.synth.getParams(osc).modPatch0 = osc + 1;
+      seq.synth.getParams(osc + 1).modPatch0 = osc + 1;
+      seq.synth.getParams(osc + 1).modLevel0 = MOD_LEVEL_MAX * 1;
+      seq.synth.getParams(osc + 1).mixOut = false;
+      seq.synth.getParams(osc + 1).envelopeDiffD = (- ENV_VALUE_MAX) >> 13;
+      seq.setToneData(i, 1, 1);
+    }
+    seq.synth.getParams(2).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(2).levelR = PART_VOLUME;
+    seq.synth.getParams(4).levelL = PART_VOLUME;
+    seq.synth.getParams(4).levelR = PART_VOLUME >> 1;
     self.start();
   };
 

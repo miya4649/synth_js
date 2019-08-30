@@ -36,34 +36,23 @@ function Sequencer()
   var chord = 0;
   var octMin = 5;
   var octRange = 3;
+  var modMax = 6;
+  var addFrequency = 4;
   var deleteFrequency = 16;
   var repeat = 4;
   var toneChange = true;
   var appendBass = true;
+  var deletePrev = true;
   var ops = 1;
   var channels = 4;
   var tempoCount = 0;
   var chordLength = 3;
   var browserType = '';
   var scaleTable = [];
-  var chordData = [
-    [0,4,7,0,0,0,0,0],
-    [4,7,11,0,0,0,0,0],
-    [0,4,9,0,0,0,0,0],
-    [0,5,9,0,0,0,0,0],
-    [2,5,9,0,0,0,0,0],
-    [2,7,11,0,0,0,0,0]
-  ];
-  var progressionData = [
-    [0, 6],
-    [0, 6],
-    [0, 6],
-    [0, 6],
-    [0, 6],
-    [0, 3]
-  ];
-  var bassData = [0,0,2,1,0,1];
-  var bassPattern = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0];
+  var chordData = [];
+  var progressionData = [];
+  var bassData = [];
+  var bassPattern = [];
   var seqData = [];
   var toneData = [];
 
@@ -143,7 +132,7 @@ function Sequencer()
       {
         osc = i * ops + j;
         self.synth.getParams(osc).envelopeDiffA = self.synth.getEnvValueMax() >> (randI(10) + 3);
-        self.synth.getParams(osc).modLevel0 = self.synth.getModLevelMax() * randI(6);
+        self.synth.getParams(osc).modLevel0 = self.synth.getModLevelMax() * randI(modMax);
         if (ops > 1)
         {
           self.synth.getParams(osc).envelopeDiffD = - self.synth.getEnvValueMax() >> (randI(9) + 13);
@@ -167,7 +156,10 @@ function Sequencer()
       }
       seqData[ch][beat].note = randI(chordLength);
       seqData[ch][beat].oct = randI(octRange) + octMin;
-      seqData[ch][beat_prev].oct = 0;
+      if (deletePrev === true)
+      {
+        seqData[ch][beat_prev].oct = 0;
+      }
     }
   }
 
@@ -194,7 +186,7 @@ function Sequencer()
         {
           tone_change();
         }
-        chord = randI(progressionData[chord][1]) + progressionData[chord][0];
+        chord = progressionData[chord][randI(progressionData[chord][0]) + 1];
         deleteCounter = randI(deleteFrequency);
         satzCounter++;
       }
@@ -203,7 +195,7 @@ function Sequencer()
       {
         seqData[randI(channels)][randI(seqLength)].oct = 0;
       }
-      add_note(4);
+      add_note(addFrequency);
       if (appendBass === true)
       {
         for (i = 0; i < seqLength; i++)
@@ -242,18 +234,21 @@ function Sequencer()
     seqCounter++;
   };
 
-  this.setSeqParam = function(tempo_arg, seqLength_arg, octMin_arg, octRange_arg, deleteFrequency_arg, repeat_arg, toneChange_arg, appendBass_arg, ops_arg, channels_arg)
+  this.setSeqParam = function(tempo_arg, seqLength_arg, octMin_arg, octRange_arg, addFrequency_arg, deleteFrequency_arg, repeat_arg, toneChange_arg, appendBass_arg, deletePrev_arg, ops_arg, channels_arg, modMax_arg)
   {
     tempo = tempo_arg;
     seqLength = seqLength_arg;
     octMin = octMin_arg;
     octRange = octRange_arg;
+    addFrequency = addFrequency_arg;
     deleteFrequency = deleteFrequency_arg;
     repeat = repeat_arg;
     toneChange = toneChange_arg;
     appendBass = appendBass_arg;
+    deletePrev = deletePrev_arg;
     ops = ops_arg;
     channels = channels_arg;
+    modMax = modMax_arg;
   };
 
   this.setChordData = function(chordLength_arg, chordData_arg, progressionData_arg, bassData_arg, bassPattern_arg)
@@ -268,5 +263,10 @@ function Sequencer()
   this.setCallback = function(callbackNoteOn_arg)
   {
     callbackNoteOn = callbackNoteOn_arg;
+  };
+
+  this.setToneData = function(channel_arg, op_arg, oct_arg)
+  {
+    toneData[channel_arg][op_arg].oct = oct_arg;
   };
 }

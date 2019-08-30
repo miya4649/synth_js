@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017-2018, miya
+  Copyright (c) 2017-2019, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,6 @@ function Synthesizer()
   var WAVE_BUFFER_SIZE_M1 = (WAVE_BUFFER_SIZE - 1);
   var ENV_VALUE_MAX = (1 << FIXED_BITS << FIXED_BITS_ENV);
   var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.52));
-  var DEFAULT_LEVEL = (Math.floor(FIXED_SCALE / 4));
   var bufferLength = 0;
 
   var oscs = 4;
@@ -40,7 +39,6 @@ function Synthesizer()
   var reverbRLength = 0.5;
   var reverbLSize = 0;
   var reverbRSize = 0;
-  var reverbVolume = (Math.floor(FIXED_SCALE * 0.3));
   var reverbDecay = 0.8;
   var outVolume = (1.0 / FIXED_SCALE);
 
@@ -160,9 +158,9 @@ function Synthesizer()
       params[i].envelopeDiffA = ENV_VALUE_MAX >> 3;
       params[i].envelopeDiffD = (- ENV_VALUE_MAX) >> 15;
       params[i].envelopeDiffR = (- ENV_VALUE_MAX) >> 13;
-      params[i].levelL = DEFAULT_LEVEL;
-      params[i].levelR = DEFAULT_LEVEL;
-      params[i].levelRev = reverbVolume;
+      params[i].levelL = FIXED_SCALE;
+      params[i].levelR = FIXED_SCALE;
+      params[i].levelRev = FIXED_SCALE;
       params[i].mixOut = true;
       params[i].modPatch0 = i;
       params[i].modPatch1 = i;
@@ -300,7 +298,6 @@ function Synthesizer()
 
   this.start = function()
   {
-    var i;
     wasp = waac.createScriptProcessor(bufferLength, 0, 2);
     bufferLength = wasp.bufferSize;
     wasp.onaudioprocess = sp_process;
@@ -335,11 +332,6 @@ function Synthesizer()
     return ENV_VALUE_MAX;
   };
 
-  this.getOscs = function()
-  {
-    return oscs;
-  };
-
   this.getModLevelMax = function()
   {
     return MOD_LEVEL_MAX;
@@ -361,33 +353,28 @@ function Synthesizer()
     callbackCounter = 0;
   };
 
-  this.setSynthParam = function(oscs_arg, reverbLLength_arg, reverbRLength_arg, reverbVolume_arg, reverbDecay_arg, outVolume_arg, bufferLength_arg)
+  this.setSynthParam = function(oscs_arg, reverbLLength_arg, reverbRLength_arg, reverbDecay_arg, outVolume_arg, bufferLength_arg)
   {
     oscs = oscs_arg;
     reverbLLength = reverbLLength_arg;
     reverbRLength = reverbRLength_arg;
-    reverbVolume = reverbVolume_arg;
     reverbDecay = reverbDecay_arg;
     outVolume = outVolume_arg;
     bufferLength = bufferLength_arg;
   };
 
-  this.setActiveCh = function(ch, value)
-  {
-    activeCh[ch] = value;
-  };
-
   this.playNote = function(ch, noteon)
   {
-    if ((noteon === true) && (params[ch].noteOn !== noteon))
+    if (noteon === true)
     {
       params[ch].state = STATE_ATTACK;
+      params[ch].noteOn = true;
+      activeCh[ch] = true;
     }
-    if ((noteon === false) && (params[ch].noteOn !== noteon))
+    else
     {
       params[ch].state = STATE_RELEASE;
+      params[ch].noteOn = false;
     }
-    params[ch].noteOn = noteon;
-    activeCh[ch] = true;
   };
 }

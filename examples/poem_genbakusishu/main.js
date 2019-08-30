@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2017-2018, miya
+  Copyright (c) 2017-2019, miya
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -64,22 +64,25 @@ function Main()
   this.playPoem = function()
   {
     var i;
-    var OSCS = 4;
+    var OPS = 1;
+    var CHANNELS = 4;
     var TEMPO = 1.0;
-    var PART_VOLUME = (Math.floor(FIXED_SCALE / OSCS));
+    var PART_VOLUME = (Math.floor(FIXED_SCALE / CHANNELS * 0.8));
     var MOD_LEVEL_MAX = (Math.floor(FIXED_SCALE * 0.3));
-    var REVERB_VOLUME = (Math.floor(FIXED_SCALE * 0.3));
+    var REVERB_VOLUME = (Math.floor(PART_VOLUME * 1.0));
     var OUT_VOLUME = (1.0 / FIXED_SCALE);
     var chordData = [
-      [4, 7, 11,0, 0, 0, 0, 0],
-      [0, 4, 9, 0, 0, 0, 0, 0],
-      [2, 5, 9, 0, 0, 0, 0, 0]
+      [0,4,9,0,0,0,0,0],
+      [2,5,9,0,0,0,0,0],
+      [4,7,11,0,0,0,0,0]
     ];
     var progressionData = [
-      [0, 2],
-      [0, 3],
-      [1, 2]
+      [2, 1,2,0,0,0,0,0],
+      [1, 0,0,0,0,0,0,0],
+      [1, 0,0,0,0,0,0,0]
     ];
+    var bassData = [2,0,0];
+    var bassPattern = [1,0,0,0,0,0,0,0];
     var poem = [
       {text: '峠三吉　原爆詩集', emphasis: 2.0},
       {text: '  序  ', emphasis: 3.0},
@@ -527,25 +530,27 @@ function Main()
       {text: '        ', emphasis: 1.0},
       {text: '        ', emphasis: 1.0}
     ];
-    var bassData = [0];
     init();
-    seq.setSeqParam(TEMPO, 8, 8, 6, 3, 16, 2, false, false);
-    seq.setChordData(3, chordData, progressionData, bassData);
-    seq.synth.setSynthParam(OSCS, 0.557278911565, 0.519439673469, REVERB_VOLUME, 0.8, OUT_VOLUME, 0);
+    seq.setSeqParam(TEMPO, 8, 6, 3, 4, 16, 2, false, true, false, OPS, CHANNELS, 6);
+    seq.setChordData(3, chordData, progressionData, bassData, bassPattern);
+    seq.synth.setSynthParam(OPS * CHANNELS, 0.557278911565, 0.519439673469, 0.8, OUT_VOLUME, 0);
     seq.setCallback(noteOnCallback);
     seq.init();
     visualizer.init(OBJECTS, TEMPO * VSPEED, poem);
-    for (i = 0; i < OSCS; i++)
+    for (i = 0; i < OPS * CHANNELS; i++)
     {
       seq.synth.getParams(i).envelopeDiffA = ENV_VALUE_MAX >> 7;
       seq.synth.getParams(i).envelopeDiffD = (- ENV_VALUE_MAX) >> 17;
       seq.synth.getParams(i).envelopeDiffR = (- ENV_VALUE_MAX) >> 15;
       seq.synth.getParams(i).modLevel0 = MOD_LEVEL_MAX;
+      seq.synth.getParams(i).levelL = PART_VOLUME;
+      seq.synth.getParams(i).levelR = PART_VOLUME;
+      seq.synth.getParams(i).levelRev = REVERB_VOLUME;
     }
-    seq.synth.getParams(0).levelL = PART_VOLUME >> 1;
-    seq.synth.getParams(0).levelR = PART_VOLUME;
-    seq.synth.getParams(1).levelL = PART_VOLUME;
-    seq.synth.getParams(1).levelR = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelL = PART_VOLUME >> 1;
+    seq.synth.getParams(1).levelR = PART_VOLUME;
+    seq.synth.getParams(2).levelL = PART_VOLUME;
+    seq.synth.getParams(2).levelR = PART_VOLUME >> 1;
     self.start();
   };
 

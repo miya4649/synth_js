@@ -85,7 +85,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.5, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (i = 0; i < KEYS; i++)
@@ -100,6 +100,7 @@ function Main()
       synth.getParams(k).modPatch0 = k + KEYS;
       synth.getParams(k).levelL = DEFAULT_LEVEL;
       synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).levelRev = REVERB_VOLUME;
       synth.getParams(k).mixOut = true;
       k = i + KEYS;
       synth.getParams(k).envelopeLevelA = ENV_VALUE_MAX;
@@ -111,6 +112,7 @@ function Main()
       synth.getParams(k).modPatch0 = k;
       synth.getParams(k).levelL = DEFAULT_LEVEL;
       synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).levelRev = REVERB_VOLUME;
       synth.getParams(k).mixOut = false;
     }
     toneOct = [6, 6];
@@ -133,7 +135,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.7, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (i = 0; i < oscs; i++)
@@ -148,6 +150,7 @@ function Main()
       synth.getParams(k).modPatch0 = k;
       synth.getParams(k).levelL = DEFAULT_LEVEL;
       synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).levelRev = REVERB_VOLUME;
       synth.getParams(k).mixOut = true;
     }
     for (i = 0; i < operators; i++)
@@ -170,7 +173,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.5, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (i = 0; i < oscs; i++)
@@ -185,6 +188,7 @@ function Main()
       synth.getParams(k).modPatch0 = k;
       synth.getParams(k).levelL = DEFAULT_LEVEL;
       synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).levelRev = REVERB_VOLUME;
       synth.getParams(k).mixOut = true;
     }
     for (i = 0; i < operators; i++)
@@ -207,7 +211,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.7, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (i = 0; i < KEYS; i++)
@@ -224,6 +228,7 @@ function Main()
         synth.getParams(k).modPatch0 = k;
         synth.getParams(k).levelL = DEFAULT_LEVEL;
         synth.getParams(k).levelR = DEFAULT_LEVEL;
+        synth.getParams(k).levelRev = REVERB_VOLUME;
         synth.getParams(k).mixOut = true;
       }
       k = i + KEYS;
@@ -239,6 +244,7 @@ function Main()
       synth.getParams(k).modPatch0 = k;
       synth.getParams(k).levelL = DEFAULT_LEVEL;
       synth.getParams(k).levelR = DEFAULT_LEVEL;
+      synth.getParams(k).levelRev = REVERB_VOLUME;
       synth.getParams(k).mixOut = false;
     }
     for (i = 0; i < operators; i++)
@@ -261,7 +267,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.7, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.7, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (j = 0; j < KEYS; j++)
@@ -278,6 +284,7 @@ function Main()
         synth.getParams(k).modPatch0 = k;
         synth.getParams(k).levelL = DEFAULT_LEVEL;
         synth.getParams(k).levelR = DEFAULT_LEVEL;
+        synth.getParams(k).levelRev = REVERB_VOLUME;
         synth.getParams(k).mixOut = true;
       }
       synth.getParams(0 * KEYS + j).modPatch0 = 1 * KEYS + j;
@@ -311,7 +318,7 @@ function Main()
     var oscs = KEYS * operators;
     self.stop();
     command.init(256);
-    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, REVERB_VOLUME, 0.5, OUT_VOLUME, bufferSize);
+    synth.setSynthParam(oscs, 0.278639455782, 0.136533333333, 0.5, OUT_VOLUME, bufferSize);
     synth.init();
     init();
     for (i = 0; i < KEYS; i++)
@@ -327,6 +334,7 @@ function Main()
       synth.getParams(i).modPatch1 = i + KEYS;
       synth.getParams(i).levelL = DEFAULT_LEVEL;
       synth.getParams(i).levelR = DEFAULT_LEVEL;
+      synth.getParams(i).levelRev = REVERB_VOLUME;
       synth.getParams(i).mixOut = true;
     }
     for (i = KEYS; i < KEYS * 2; i++)
@@ -342,6 +350,7 @@ function Main()
       synth.getParams(i).modPatch1 = i;
       synth.getParams(i).levelL = DEFAULT_LEVEL;
       synth.getParams(i).levelR = DEFAULT_LEVEL;
+      synth.getParams(i).levelRev = REVERB_VOLUME;
       synth.getParams(i).mixOut = false;
     }
     for (i = 0; i < operators; i++)
@@ -361,6 +370,7 @@ function Main()
   var init = function()
   {
     var i;
+
     for (i = 0; i < scaleBufferSize; i++)
     {
       scaleTable[i] = Math.floor(Math.pow(2.0, i / 12.0) * 523.2511306011972 * (0x100000000 / synth.getSampleRate() / synth.getWaveBufferSize()));
